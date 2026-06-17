@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .hidden-view { display: none; }
     #riwayat-modal.open { display: flex; }
     .suggestion-item:hover { background: #f3f4f6; }
   </style>
@@ -42,7 +41,7 @@
     </section>
 
     <!-- VIEW: Add Entry -->
-    <section id="view-add-entry" class="view hidden-view">
+    <section id="view-add-entry" class="view hidden">
       <button onclick="navigate('entry-list')" class="text-blue-600 text-sm mb-3">&larr; Kembali</button>
       <h2 class="text-lg font-semibold mb-3" id="form-title">Tambah Entry</h2>
       <form id="entry-form" onsubmit="saveEntry(event)" class="space-y-3">
@@ -95,7 +94,7 @@
     </section>
 
     <!-- VIEW: Toko List -->
-    <section id="view-toko-list" class="view hidden-view">
+    <section id="view-toko-list" class="view hidden">
       <button onclick="navigate('entry-list')" class="text-blue-600 text-sm mb-3">&larr; Kembali</button>
       <h2 class="text-lg font-semibold mb-3">Daftar Toko</h2>
       <button onclick="openTokoModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm mb-3">+ Tambah Toko</button>
