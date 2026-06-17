@@ -4,6 +4,30 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// === AUTH ===
+const STATIC_USER = { username: 'admin', password: 'admin123' };
+
+function login(e) {
+  e.preventDefault();
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+
+  if (username === STATIC_USER.username && password === STATIC_USER.password) {
+    localStorage.setItem('auth', 'true');
+    errorEl.classList.add('hidden');
+    navigate('entry-list');
+  } else {
+    errorEl.textContent = 'Username atau password salah';
+    errorEl.classList.remove('hidden');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('auth');
+  navigate('login');
+}
+
 // === STATE ===
 let selectedBarangId = null;
 let typeaheadTimer;
@@ -12,6 +36,11 @@ let typeaheadTimer;
 function navigate(view) {
   document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
   document.getElementById('view-' + view).classList.remove('hidden');
+
+  const isLogin = view === 'login';
+  document.getElementById('main-nav').classList.toggle('hidden', isLogin);
+  document.getElementById('btn-logout').classList.toggle('hidden', isLogin);
+
   if (view === 'entry-list') { loadEntries(); loadFilterOptions(); }
   if (view === 'toko-list') { loadTokoList(); }
   if (view === 'add-entry') { resetForm(); loadFormOptions(); }
@@ -591,5 +620,11 @@ async function deleteTokoHandler(id) {
 
 // === INIT ===
 document.addEventListener('DOMContentLoaded', () => {
-  navigate('entry-list');
+  document.getElementById('login-form').addEventListener('submit', login);
+
+  if (localStorage.getItem('auth')) {
+    navigate('entry-list');
+  } else {
+    navigate('login');
+  }
 });
