@@ -461,3 +461,8 @@ async function deleteTokoHandler(id) {
   await deleteToko(id);
   loadTokoList();
 }
+
+// === INIT ===
+document.addEventListener('DOMContentLoaded', () => {
+  navigate('entry-list');
+});
