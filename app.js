@@ -82,7 +82,7 @@ async function searchBarang(query) {
   try {
     if (!query.trim()) return [];
     const { data } = await sb.from('barang')
-      .select('*')
+      .select('*, kategori:kategori_id(*)')
       .ilike('nama', `%${query}%`)
       .limit(10);
     return data || [];
@@ -561,9 +561,9 @@ function onNamaBarangInput() {
       const box = document.getElementById('suggestion-box');
       if (results.length === 0) { box.classList.add('hidden'); return; }
       box.innerHTML = results.map(r => `
-        <div class="suggestion-item px-3 py-2 cursor-pointer text-sm" data-id="${r.id}" data-nama="${escHtml(r.nama)}" data-kategori="${escHtml(r.kategori)}" onmousedown="selectBarangSuggestion(this)">
+        <div class="suggestion-item px-3 py-2 cursor-pointer text-sm" data-id="${r.id}" data-nama="${escHtml(r.nama)}" data-kategori-id="${r.kategori_id || ''}" onmousedown="selectBarangSuggestion(this)">
           <span class="font-medium">${escHtml(r.nama)}</span>
-          ${r.kategori ? `<span class="text-gray-400 text-xs ml-1">${escHtml(r.kategori)}</span>` : ''}
+          ${r.kategori ? `<span class="text-gray-400 text-xs ml-1">${escHtml(r.kategori.nama)}</span>` : ''}
         </div>
       `).join('');
       box.classList.remove('hidden');
@@ -576,7 +576,7 @@ function selectBarangSuggestion(el) {
   document.getElementById('field-barang-id').value = selectedBarangId;
   document.getElementById('field-nama').value = el.dataset.nama;
   const katSelect = document.getElementById('field-kategori');
-  if (el.dataset.kategori) katSelect.value = el.dataset.kategori;
+  if (el.dataset.kategoriId) katSelect.value = el.dataset.kategoriId;
   hideSuggestions();
 }
 
