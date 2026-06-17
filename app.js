@@ -63,3 +63,24 @@ async function getBarangByNama(nama) {
   const { data } = await sb.from('barang').select('*').eq('nama', nama).maybeSingle();
   return data;
 }
+
+// === TOKO DB ===
+async function getTokoAll() {
+  const { data } = await sb.from('toko').select('*').order('nama');
+  return data || [];
+}
+
+async function createToko(nama, alamat, kontak) {
+  const { data } = await sb.from('toko').insert({ nama, alamat, kontak }).select().single();
+  return data;
+}
+
+async function updateToko(id, updates) {
+  const { data } = await sb.from('toko').update(updates).eq('id', id).select().single();
+  return data;
+}
+
+async function deleteToko(id) {
+  const { error } = await sb.from('toko').delete().eq('id', id);
+  return !error;
+}
