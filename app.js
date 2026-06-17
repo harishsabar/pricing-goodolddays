@@ -659,7 +659,6 @@ async function openRiwayat(barangId) {
     const loading = document.getElementById('riwayat-loading');
     const nama = document.getElementById('riwayat-nama');
     const kategori = document.getElementById('riwayat-kategori');
-    const info = document.getElementById('riwayat-info');
 
     const barang = await sb.from('barang').select('*, kategori:kategori_id(*)').eq('id', barangId).single();
     if (!barang.data) return;
@@ -675,40 +674,29 @@ async function openRiwayat(barangId) {
     loading.classList.add('hidden');
 
     if (entries.length === 0) {
-      info.textContent = '';
-      list.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Belum ada riwayat.</p>';
+      list.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Belum ada riwayat.</p>';
       return;
     }
 
-    const total = entries.length;
-    const avg = Math.round(entries.reduce((sum, e) => sum + e.harga, 0) / total);
-    info.textContent = `${total} entry · Rata-rata Rp${rupiah(avg)}`;
+    const sorted = [...entries].sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.id - b.id);
 
-    list.innerHTML = entries.map((e, i) => {
-      const toko = e.toko || {};
-      const prev = entries[i + 1]; // next in array = previous chronologically
-      let selisihHtml = '';
-      if (prev && prev.harga !== e.harga) {
-        const diff = e.harga - prev.harga;
-        const pct = prev.harga > 0 ? ((diff / prev.harga) * 100).toFixed(1) : 0;
-        const cls = diff > 0 ? 'text-green-600' : 'text-red-600';
-        selisihHtml = `<span class="${cls} text-xs ml-1">${diff > 0 ? '▲' : '▼'} Rp${rupiah(Math.abs(diff))} (${pct}%)</span>`;
-      }
-      return `
-        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-          <div class="text-sm">
-            <span class="text-gray-500">${e.tanggal}</span>
-            <span class="ml-2 text-gray-700">${escHtml(e.satuan)}</span>
-            <span class="ml-1 text-gray-400">${escHtml(toko.nama || '-')}</span>
+    list.innerHTML = `
+      <div class="relative pl-6 border-l-2 border-blue-200 space-y-5">
+        ${sorted.map(e => `
+          <div class="relative group">
+            <div class="absolute -left-[25px] top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-gray-400">${e.tanggal}</div>
+                <div class="text-base font-semibold text-blue-700 mt-0.5">Rp${rupiah(e.harga)}</div>
+                <div class="text-xs text-gray-500">${escHtml(e.satuan)}</div>
+              </div>
+              <button onclick="editEntry(${e.id})" class="text-xs text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition" title="Edit">✎</button>
+            </div>
           </div>
-          <div class="flex items-center gap-1">
-            <span class="font-semibold text-blue-700">Rp${rupiah(e.harga)}</span>
-            ${selisihHtml}
-            <button onclick="editEntry(${e.id})" class="text-xs text-blue-500 hover:underline ml-2" title="Edit">✎</button>
-          </div>
-        </div>
-      `;
-    }).join('');
+        `).join('')}
+      </div>
+    `;
   } catch (err) {
     alert('Gagal memuat riwayat: ' + err.message);
   }
