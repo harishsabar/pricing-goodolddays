@@ -1,6 +1,6 @@
 // === SUPABASE CONFIG ===
-const SUPABASE_URL = 'TODO: ganti dengan Supabase URL';
-const SUPABASE_ANON_KEY = 'TODO: ganti dengan Supabase anon key';
+const SUPABASE_URL = 'https://lnqtnmlzmtdfyhyzlrny.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxucXRubWx6bXRkZnloeXpscm55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODkxNTQsImV4cCI6MjA5NzI2NTE1NH0.-YsZXjwUE-VsSI6Xq3dL-2ZqvvNhKzKjP9RpO3Z09G4';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
