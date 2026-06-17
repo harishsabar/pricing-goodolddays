@@ -122,6 +122,57 @@ async function getBarangByNama(nama) {
   }
 }
 
+// === KATEGORI DB ===
+async function getKategoriAll() {
+  try {
+    const { data } = await sb.from('kategori').select('*').order('nama');
+    return data || [];
+  } catch (err) {
+    console.error('getKategoriAll error:', err);
+    return [];
+  }
+}
+
+async function createKategori(nama) {
+  try {
+    const { data } = await sb.from('kategori').insert({ nama }).select().single();
+    return data;
+  } catch (err) {
+    console.error('createKategori error:', err);
+    return null;
+  }
+}
+
+async function updateKategori(id, nama) {
+  try {
+    const { data } = await sb.from('kategori').update({ nama }).eq('id', id).select().single();
+    return data;
+  } catch (err) {
+    console.error('updateKategori error:', err);
+    return null;
+  }
+}
+
+async function deleteKategori(id) {
+  try {
+    const { error } = await sb.from('kategori').delete().eq('id', id);
+    return !error;
+  } catch (err) {
+    console.error('deleteKategori error:', err);
+    return false;
+  }
+}
+
+async function getKategoriById(id) {
+  try {
+    const { data } = await sb.from('kategori').select('*').eq('id', id).single();
+    return data;
+  } catch (err) {
+    console.error('getKategoriById error:', err);
+    return null;
+  }
+}
+
 // === TOKO DB ===
 async function getTokoAll() {
   try {
