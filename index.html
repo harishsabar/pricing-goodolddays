@@ -75,6 +75,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Nama Barang</label>
           <input type="text" id="field-nama" required autocomplete="off" class="w-full border rounded-lg px-3 py-2 text-sm" oninput="onNamaBarangInput()" onblur="setTimeout(()=>hideSuggestions(),200)">
           <div id="suggestion-box" class="absolute top-full left-0 right-0 bg-white border rounded-lg shadow z-10 hidden max-h-40 overflow-y-auto"></div>
+          <p id="entry-error-nama" class="text-red-500 text-xs mt-1 hidden"></p>
         </div>
         <input type="hidden" id="field-barang-id" value="">
         <div>
