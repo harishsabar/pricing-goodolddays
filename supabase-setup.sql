@@ -8,6 +8,30 @@ CREATE TABLE IF NOT EXISTS barang (
   kategori TEXT NOT NULL DEFAULT ''
 );
 
+-- Tabel kategori
+CREATE TABLE IF NOT EXISTS kategori (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nama TEXT NOT NULL UNIQUE
+);
+
+-- Migrasi: pindah kategori text ke tabel kategori
+INSERT INTO kategori (nama)
+  SELECT DISTINCT TRIM(kategori) FROM barang
+  WHERE kategori IS NOT NULL AND TRIM(kategori) != ''
+  ON CONFLICT (nama) DO NOTHING;
+
+ALTER TABLE barang ADD COLUMN kategori_id BIGINT REFERENCES kategori(id);
+
+UPDATE barang b
+  SET kategori_id = k.id
+  FROM kategori k
+  WHERE TRIM(b.kategori) = k.nama;
+
+CREATE INDEX IF NOT EXISTS idx_barang_kategori_id ON barang(kategori_id);
+
+-- Hapus kolom kategori text setelah migrasi
+ALTER TABLE barang DROP COLUMN IF EXISTS kategori;
+
 -- Tabel toko
 CREATE TABLE IF NOT EXISTS toko (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -35,6 +59,9 @@ ALTER TABLE entry_harga ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public access to barang" ON barang FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public access to toko" ON toko FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public access to entry_harga" ON entry_harga FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE kategori ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public access to kategori" ON kategori FOR ALL USING (true) WITH CHECK (true);
 
 CREATE INDEX IF NOT EXISTS idx_entry_harga_barang_id ON entry_harga(barang_id);
 CREATE INDEX IF NOT EXISTS idx_entry_harga_toko_id ON entry_harga(toko_id);
