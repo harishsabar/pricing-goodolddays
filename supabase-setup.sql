@@ -62,11 +62,15 @@ ALTER TABLE barang ENABLE ROW LEVEL SECURITY;
 ALTER TABLE toko ENABLE ROW LEVEL SECURITY;
 ALTER TABLE entry_harga ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public access to barang" ON barang;
 CREATE POLICY "Public access to barang" ON barang FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Public access to toko" ON toko;
 CREATE POLICY "Public access to toko" ON toko FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Public access to entry_harga" ON entry_harga;
 CREATE POLICY "Public access to entry_harga" ON entry_harga FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE kategori ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public access to kategori" ON kategori;
 CREATE POLICY "Public access to kategori" ON kategori FOR ALL USING (true) WITH CHECK (true);
 
 CREATE INDEX IF NOT EXISTS idx_entry_harga_barang_id ON entry_harga(barang_id);
