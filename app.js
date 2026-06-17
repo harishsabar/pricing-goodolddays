@@ -558,6 +558,7 @@ async function saveEntry(e) {
         barangId = existing.id;
       } else {
         const created = await createBarang(nama);
+        if (!created) { alert('Gagal membuat barang baru.'); btn.disabled = false; btn.textContent = 'Simpan'; return; }
         barangId = created.id;
       }
     }

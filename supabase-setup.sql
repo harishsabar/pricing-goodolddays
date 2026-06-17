@@ -14,23 +14,29 @@ CREATE TABLE IF NOT EXISTS kategori (
   nama TEXT NOT NULL UNIQUE
 );
 
--- Migrasi: pindah kategori text ke tabel kategori
-INSERT INTO kategori (nama)
-  SELECT DISTINCT TRIM(kategori) FROM barang
-  WHERE kategori IS NOT NULL AND TRIM(kategori) != ''
-  ON CONFLICT (nama) DO NOTHING;
+-- Migrasi: pindah kategori text ke tabel kategori (re-runnable)
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='barang' AND column_name='kategori'
+  ) THEN
+    INSERT INTO kategori (nama)
+      SELECT DISTINCT TRIM(kategori) FROM barang
+      WHERE kategori IS NOT NULL AND TRIM(kategori) != ''
+      ON CONFLICT (nama) DO NOTHING;
 
-ALTER TABLE barang ADD COLUMN kategori_id BIGINT REFERENCES kategori(id);
+    ALTER TABLE barang ADD COLUMN kategori_id BIGINT REFERENCES kategori(id);
 
-UPDATE barang b
-  SET kategori_id = k.id
-  FROM kategori k
-  WHERE TRIM(b.kategori) = k.nama;
+    UPDATE barang b
+      SET kategori_id = k.id
+      FROM kategori k
+      WHERE TRIM(b.kategori) = k.nama;
 
-CREATE INDEX IF NOT EXISTS idx_barang_kategori_id ON barang(kategori_id);
+    CREATE INDEX IF NOT EXISTS idx_barang_kategori_id ON barang(kategori_id);
 
--- Hapus kolom kategori text setelah migrasi
-ALTER TABLE barang DROP COLUMN IF EXISTS kategori;
+    ALTER TABLE barang DROP COLUMN IF EXISTS kategori;
+  END IF;
+END $$;
 
 -- Tabel toko
 CREATE TABLE IF NOT EXISTS toko (
