@@ -529,11 +529,13 @@ function openTokoModal() {
   document.getElementById('toko-form').reset();
   document.getElementById('toko-field-id').value = '';
   document.getElementById('toko-modal-title').textContent = 'Tambah Toko';
+  document.getElementById('toko-modal').classList.remove('hidden');
   document.getElementById('toko-modal').classList.add('flex');
 }
 
 function closeTokoModal() {
   document.getElementById('toko-modal').classList.remove('flex');
+  document.getElementById('toko-modal').classList.add('hidden');
 }
 
 async function saveToko(e) {
