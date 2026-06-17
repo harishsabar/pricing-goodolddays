@@ -42,6 +42,7 @@
         <nav class="flex gap-2 text-sm" id="main-nav">
           <button onclick="navigate('entry-list')" class="text-blue-600 hover:underline" id="nav-entry">Entry</button>
           <button onclick="navigate('toko-list')" class="text-blue-600 hover:underline" id="nav-toko">Toko</button>
+          <button onclick="navigate('kategori-list')" class="text-blue-600 hover:underline" id="nav-kategori">Kategori</button>
         </nav>
         <button id="btn-logout" onclick="logout()" class="text-red-500 text-sm hover:underline hidden">Keluar</button>
       </div>
@@ -79,8 +80,9 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
           <select id="field-kategori" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option value="">-- Pilih / Ketik --</option>
+            <option value="">-- Pilih Kategori --</option>
           </select>
+          <p id="entry-error-kategori" class="text-red-500 text-xs mt-1 hidden"></p>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Satuan</label>
@@ -89,10 +91,12 @@
             <option value="meter"><option value="yard"><option value="roll"><option value="pcs"><option value="bungkus"><option value="golong"><option value="set">
           </datalist>
         </div>
+        <p id="entry-error-satuan" class="text-red-500 text-xs mt-1 hidden"></p>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Harga (Rp)</label>
           <input type="number" id="field-harga" required min="0" class="w-full border rounded-lg px-3 py-2 text-sm">
         </div>
+        <p id="entry-error-harga" class="text-red-500 text-xs mt-1 hidden"></p>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Toko</label>
           <div class="flex gap-2">
@@ -101,11 +105,13 @@
             </select>
             <button type="button" onclick="openTokoModal()" class="bg-green-600 text-white px-3 rounded-lg text-sm">+</button>
           </div>
+          <p id="entry-error-toko" class="text-red-500 text-xs mt-1 hidden"></p>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
           <input type="date" id="field-tanggal" class="w-full border rounded-lg px-3 py-2 text-sm">
         </div>
+        <p id="entry-error-tanggal" class="text-red-500 text-xs mt-1 hidden"></p>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
           <textarea id="field-catatan" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
@@ -127,13 +133,25 @@
       <div id="toko-loading" class="text-center text-gray-400 py-8 text-sm hidden">Memuat...</div>
     </section>
 
+    <!-- VIEW: Kategori List -->
+    <section id="view-kategori-list" class="view hidden">
+      <button onclick="navigate('entry-list')" class="text-blue-600 text-sm mb-3">&larr; Kembali</button>
+      <h2 class="text-lg font-semibold mb-3">Daftar Kategori</h2>
+      <button onclick="openKategoriModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm mb-3">+ Tambah Kategori</button>
+      <div id="kategori-list" class="space-y-2"></div>
+      <div id="kategori-loading" class="text-center text-gray-400 py-8 text-sm hidden">Memuat...</div>
+    </section>
+
     <!-- MODAL: Riwayat Barang -->
     <div id="riwayat-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-20 p-4" onclick="if(event.target===this)closeRiwayat()">
       <div class="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
         <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-base" id="riwayat-nama"></h3>
-            <span class="text-xs text-gray-500" id="riwayat-kategori"></span>
+            <div class="text-xs text-gray-500 mt-0.5">
+              <span class="bg-gray-100 rounded px-1.5 py-0.5" id="riwayat-kategori"></span>
+              <span class="ml-2" id="riwayat-info"></span>
+            </div>
           </div>
           <button onclick="closeRiwayat()" class="text-gray-400 text-xl">&times;</button>
         </div>
@@ -149,11 +167,31 @@
         <form id="toko-form" onsubmit="saveToko(event)" class="space-y-3">
           <input type="hidden" id="toko-field-id">
           <div><label class="block text-sm font-medium mb-1">Nama Toko</label><input type="text" id="toko-field-nama" required class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+          <p id="toko-error-nama" class="text-red-500 text-xs mt-1 hidden"></p>
           <div><label class="block text-sm font-medium mb-1">Alamat</label><textarea id="toko-field-alamat" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
           <div><label class="block text-sm font-medium mb-1">Kontak</label><input type="text" id="toko-field-kontak" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
           <div class="flex gap-2">
             <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm">Simpan</button>
             <button type="button" onclick="closeTokoModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm">Batal</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: Kategori Form -->
+    <div id="kategori-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-20 p-4" onclick="if(event.target===this)closeKategoriModal()">
+      <div class="bg-white rounded-xl w-full max-w-sm p-4">
+        <h3 class="font-semibold mb-3" id="kategori-modal-title">Tambah Kategori</h3>
+        <form id="kategori-form" onsubmit="saveKategori(event)" class="space-y-3">
+          <input type="hidden" id="kategori-field-id">
+          <div>
+            <label class="block text-sm font-medium mb-1">Nama Kategori</label>
+            <input type="text" id="kategori-field-nama" required class="w-full border rounded-lg px-3 py-2 text-sm">
+            <p id="kategori-error-nama" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm">Simpan</button>
+            <button type="button" onclick="closeKategoriModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm">Batal</button>
           </div>
         </form>
       </div>
