@@ -216,3 +216,118 @@ async function loadFilterOptions() {
   tkSelect.innerHTML = '<option value="">Semua Toko</option>' + tokos.map(t => `<option value="${t.id}">${escHtml(t.nama)}</option>`).join('');
   tkSelect.value = currentTk || '';
 }
+
+// === FORM ENTRY ===
+function resetForm() {
+  document.getElementById('entry-form').reset();
+  document.getElementById('field-entry-id').value = '';
+  document.getElementById('field-barang-id').value = '';
+  document.getElementById('field-tanggal').value = todayStr();
+  document.getElementById('form-title').textContent = 'Tambah Entry';
+  document.getElementById('btn-delete').classList.add('hidden');
+  editingEntryId = null;
+  selectedBarangId = null;
+}
+
+async function loadFormOptions() {
+  const kats = await getKategoriAll();
+  const katSelect = document.getElementById('field-kategori');
+  katSelect.innerHTML = '<option value="">-- Pilih / Ketik --</option>' + kats.map(k => `<option value="${k}">${k}</option>`).join('');
+
+  const tokos = await getTokoAll();
+  const tkSelect = document.getElementById('field-toko');
+  tkSelect.innerHTML = '<option value="">-- Pilih Toko --</option>' + tokos.map(t => `<option value="${t.id}">${escHtml(t.nama)}</option>`).join('');
+}
+
+async function saveEntry(e) {
+  e.preventDefault();
+  const entryId = document.getElementById('field-entry-id').value;
+  let barangId = document.getElementById('field-barang-id').value;
+  const nama = document.getElementById('field-nama').value.trim();
+  const kategori = document.getElementById('field-kategori').value;
+  const satuan = document.getElementById('field-satuan').value.trim();
+  const harga = parseInt(document.getElementById('field-harga').value);
+  const tokoId = document.getElementById('field-toko').value || null;
+  const tanggal = document.getElementById('field-tanggal').value;
+  const catatan = document.getElementById('field-catatan').value.trim();
+
+  if (!barangId) {
+    let existing = await getBarangByNama(nama);
+    if (existing) {
+      barangId = existing.id;
+    } else {
+      const created = await createBarang(nama, kategori);
+      barangId = created.id;
+    }
+  } else if (kategori) {
+    await sb.from('barang').update({ kategori }).eq('id', barangId);
+  }
+
+  const data = { barang_id: barangId, satuan, harga, toko_id: tokoId, tanggal, catatan };
+
+  if (entryId) {
+    await updateEntry(parseInt(entryId), data);
+  } else {
+    await createEntry(data);
+  }
+
+  navigate('entry-list');
+}
+
+function onNamaBarangInput() {
+  selectedBarangId = null;
+  document.getElementById('field-barang-id').value = '';
+  const query = document.getElementById('field-nama').value.trim();
+  if (query.length < 1) { hideSuggestions(); return; }
+  searchBarang(query).then(results => {
+    const box = document.getElementById('suggestion-box');
+    if (results.length === 0) { box.classList.add('hidden'); return; }
+    box.innerHTML = results.map(r => `
+      <div class="suggestion-item px-3 py-2 cursor-pointer text-sm" data-id="${r.id}" data-nama="${escHtml(r.nama)}" data-kategori="${escHtml(r.kategori)}" onmousedown="selectBarangSuggestion(this)">
+        <span class="font-medium">${escHtml(r.nama)}</span>
+        ${r.kategori ? `<span class="text-gray-400 text-xs ml-1">${escHtml(r.kategori)}</span>` : ''}
+      </div>
+    `).join('');
+    box.classList.remove('hidden');
+  });
+}
+
+function selectBarangSuggestion(el) {
+  selectedBarangId = parseInt(el.dataset.id);
+  document.getElementById('field-barang-id').value = selectedBarangId;
+  document.getElementById('field-nama').value = el.dataset.nama;
+  const katSelect = document.getElementById('field-kategori');
+  if (el.dataset.kategori) katSelect.value = el.dataset.kategori;
+  hideSuggestions();
+}
+
+function hideSuggestions() {
+  document.getElementById('suggestion-box').classList.add('hidden');
+}
+
+async function editEntry(entryId) {
+  const { data: entry } = await sb.from('entry_harga').select('*, barang:barang_id(*)').eq('id', entryId).single();
+  if (!entry) return;
+
+  navigate('add-entry');
+  document.getElementById('form-title').textContent = 'Edit Entry';
+  document.getElementById('field-entry-id').value = entry.id;
+  document.getElementById('field-nama').value = entry.barang.nama;
+  document.getElementById('field-barang-id').value = entry.barang_id;
+  document.getElementById('field-kategori').value = entry.barang.kategori || '';
+  document.getElementById('field-satuan').value = entry.satuan;
+  document.getElementById('field-harga').value = entry.harga;
+  document.getElementById('field-toko').value = entry.toko_id || '';
+  document.getElementById('field-tanggal').value = entry.tanggal;
+  document.getElementById('field-catatan').value = entry.catatan || '';
+  document.getElementById('btn-delete').classList.remove('hidden');
+  editingEntryId = entry.id;
+  selectedBarangId = entry.barang_id;
+}
+
+async function deleteEntry() {
+  const id = document.getElementById('field-entry-id').value;
+  if (!id || !confirm('Hapus entry ini?')) return;
+  await deleteEntryData(parseInt(id));
+  navigate('entry-list');
+}
