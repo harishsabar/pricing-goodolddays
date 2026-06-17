@@ -84,3 +84,53 @@ async function deleteToko(id) {
   const { error } = await sb.from('toko').delete().eq('id', id);
   return !error;
 }
+
+// === ENTRY DB ===
+async function getEntries(filters = {}) {
+  let query = sb.from('entry_harga')
+    .select('*, barang:barang_id(*), toko:toko_id(*)')
+    .order('tanggal', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(100);
+
+  if (filters.barang_id) query = query.eq('barang_id', filters.barang_id);
+  if (filters.toko_id) query = query.eq('toko_id', filters.toko_id);
+
+  // search & kategori: filter via barang IDs dulu
+  if (filters.search || filters.kategori) {
+    let bq = sb.from('barang').select('id');
+    if (filters.search) bq = bq.ilike('nama', `%${filters.search}%`);
+    if (filters.kategori) bq = bq.eq('kategori', filters.kategori);
+    const { data: barangs } = await bq;
+    const ids = (barangs || []).map(b => b.id);
+    if (ids.length === 0) return [];
+    query = query.in('barang_id', ids);
+  }
+
+  const { data } = await query;
+  return data || [];
+}
+
+async function createEntry(data) {
+  const { data: result } = await sb.from('entry_harga').insert(data).select().single();
+  return result;
+}
+
+async function updateEntry(id, data) {
+  const { data: result } = await sb.from('entry_harga').update(data).eq('id', id).select().single();
+  return result;
+}
+
+async function deleteEntryData(id) {
+  const { error } = await sb.from('entry_harga').delete().eq('id', id);
+  return !error;
+}
+
+async function getRiwayat(barangId) {
+  const { data } = await sb.from('entry_harga')
+    .select('*, toko:toko_id(*)')
+    .eq('barang_id', barangId)
+    .order('tanggal', { ascending: false })
+    .order('id', { ascending: false });
+  return data || [];
+}
