@@ -92,9 +92,9 @@ async function searchBarang(query) {
   }
 }
 
-async function createBarang(nama, kategori) {
+async function createBarang(nama) {
   try {
-    const { data } = await sb.from('barang').insert({ nama, kategori }).select().single();
+    const { data } = await sb.from('barang').insert({ nama }).select().single();
     return data;
   } catch (err) {
     console.error('createBarang error:', err);
@@ -208,7 +208,7 @@ async function deleteToko(id) {
 async function getEntries(filters = {}) {
   try {
     let query = sb.from('entry_harga')
-      .select('*, barang:barang_id(*), toko:toko_id(*)')
+      .select('*, barang:barang_id(*, kategori:kategori_id(*)), toko:toko_id(*)')
       .order('tanggal', { ascending: false })
       .order('id', { ascending: false })
       .limit(100);
@@ -220,7 +220,7 @@ async function getEntries(filters = {}) {
     if (filters.search || filters.kategori) {
       let bq = sb.from('barang').select('id');
       if (filters.search) bq = bq.ilike('nama', `%${filters.search}%`);
-      if (filters.kategori) bq = bq.eq('kategori', filters.kategori);
+      if (filters.kategori) bq = bq.eq('kategori_id', Number(filters.kategori));
       const { data: barangs } = await bq;
       const ids = (barangs || []).map(b => b.id);
       if (ids.length === 0) return [];
@@ -424,7 +424,7 @@ function renderEntryCard(e) {
         <div class="flex-1 min-w-0">
           <div class="font-medium text-gray-900">${escHtml(barang.nama)}</div>
           <div class="text-xs text-gray-500 mt-0.5">
-            <span class="bg-gray-100 rounded px-1.5 py-0.5">${escHtml(barang.kategori || '-')}</span>
+            <span class="bg-gray-100 rounded px-1.5 py-0.5">${escHtml(barang.kategori ? barang.kategori.nama : '-')}</span>
             <span class="ml-1">${escHtml(e.satuan)}</span>
             <span class="ml-1">${escHtml(toko.nama || '-')}</span>
           </div>
@@ -465,7 +465,7 @@ async function loadFilterOptions() {
     const kats = await getKategoriAll();
     const katSelect = document.getElementById('filter-kategori');
     const currentKat = katSelect.value;
-    katSelect.innerHTML = '<option value="">Semua Kategori</option>' + kats.map(k => `<option value="${k}">${k}</option>`).join('');
+    katSelect.innerHTML = '<option value="">Semua Kategori</option>' + kats.map(k => `<option value="${k.id}">${escHtml(k.nama)}</option>`).join('');
     katSelect.value = currentKat || '';
 
     const tokos = await getTokoAll();
@@ -493,7 +493,7 @@ async function loadFormOptions() {
   try {
     const kats = await getKategoriAll();
     const katSelect = document.getElementById('field-kategori');
-    katSelect.innerHTML = '<option value="">-- Pilih / Ketik --</option>' + kats.map(k => `<option value="${k}">${k}</option>`).join('');
+    katSelect.innerHTML = '<option value="">-- Pilih Kategori --</option>' + kats.map(k => `<option value="${k.id}">${escHtml(k.nama)}</option>`).join('');
 
     const tokos = await getTokoAll();
     const tkSelect = document.getElementById('field-toko');
@@ -512,7 +512,7 @@ async function saveEntry(e) {
     const entryId = document.getElementById('field-entry-id').value;
     let barangId = document.getElementById('field-barang-id').value;
     const nama = document.getElementById('field-nama').value.trim();
-    const kategori = document.getElementById('field-kategori').value;
+    const kategoriId = document.getElementById('field-kategori').value || null;
     const satuan = document.getElementById('field-satuan').value.trim();
     const hargaVal = Number(document.getElementById('field-harga').value);
     const harga = isNaN(hargaVal) ? 0 : hargaVal;
@@ -525,11 +525,12 @@ async function saveEntry(e) {
       if (existing) {
         barangId = existing.id;
       } else {
-        const created = await createBarang(nama, kategori);
+        const created = await createBarang(nama);
         barangId = created.id;
       }
-    } else if (kategori) {
-      await sb.from('barang').update({ kategori }).eq('id', barangId);
+    }
+    if (kategoriId) {
+      await sb.from('barang').update({ kategori_id: Number(kategoriId) }).eq('id', barangId);
     }
 
     const data = { barang_id: barangId, satuan, harga, toko_id: tokoId, tanggal, catatan };
@@ -593,7 +594,7 @@ async function editEntry(entryId) {
     document.getElementById('field-entry-id').value = entry.id;
     document.getElementById('field-nama').value = entry.barang.nama;
     document.getElementById('field-barang-id').value = entry.barang_id;
-    document.getElementById('field-kategori').value = entry.barang.kategori || '';
+    document.getElementById('field-kategori').value = entry.barang.kategori_id || '';
     document.getElementById('field-satuan').value = entry.satuan;
     document.getElementById('field-harga').value = entry.harga;
     document.getElementById('field-toko').value = entry.toko_id || '';
