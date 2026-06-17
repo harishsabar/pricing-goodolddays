@@ -134,3 +134,85 @@ async function getRiwayat(barangId) {
     .order('id', { ascending: false });
   return data || [];
 }
+
+// === ENTRY LIST VIEW ===
+async function loadEntries() {
+  const container = document.getElementById('entry-list');
+  const loading = document.getElementById('entry-loading');
+  loading.classList.remove('hidden');
+  container.innerHTML = '';
+
+  const search = document.getElementById('search-input').value;
+  const kategori = document.getElementById('filter-kategori').value;
+  const toko = document.getElementById('filter-toko').value;
+
+  const entries = await getEntries({ search, kategori, toko_id: toko || undefined });
+  loading.classList.add('hidden');
+
+  if (entries.length === 0) {
+    container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Belum ada data. Klik Tambah untuk mulai.</p>';
+    return;
+  }
+
+  container.innerHTML = entries.map(e => renderEntryCard(e)).join('');
+}
+
+function renderEntryCard(e) {
+  const barang = e.barang || {};
+  const toko = e.toko || {};
+  const isChange = e.tanggal !== todayStr();
+  return `
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition" onclick="openRiwayat(${barang.id})">
+      <div class="flex items-start justify-between">
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-gray-900">${escHtml(barang.nama)}</div>
+          <div class="text-xs text-gray-500 mt-0.5">
+            <span class="bg-gray-100 rounded px-1.5 py-0.5">${escHtml(barang.kategori || '-')}</span>
+            <span class="ml-1">${escHtml(e.satuan)}</span>
+            <span class="ml-1">${escHtml(toko.nama || '-')}</span>
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0 ml-2">
+          <div class="font-semibold text-blue-700">Rp${rupiah(e.harga)}</div>
+          <div class="text-xs ${isChange ? 'text-yellow-600' : 'text-gray-400'}">${e.tanggal}</div>
+        </div>
+      </div>
+      ${e.catatan ? `<div class="text-xs text-gray-400 mt-1">${escHtml(e.catatan)}</div>` : ''}
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function onSearchChange() {
+  debouncedLoadEntries();
+}
+
+function onFilterChange() {
+  loadEntries();
+}
+
+let debounceTimer;
+function debouncedLoadEntries() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(loadEntries, 300);
+}
+
+async function loadFilterOptions() {
+  const kats = await getKategoriAll();
+  const katSelect = document.getElementById('filter-kategori');
+  const currentKat = katSelect.value;
+  katSelect.innerHTML = '<option value="">Semua Kategori</option>' + kats.map(k => `<option value="${k}">${k}</option>`).join('');
+  katSelect.value = currentKat || '';
+
+  const tokos = await getTokoAll();
+  const tkSelect = document.getElementById('filter-toko');
+  const currentTk = tkSelect.value;
+  tkSelect.innerHTML = '<option value="">Semua Toko</option>' + tokos.map(t => `<option value="${t.id}">${escHtml(t.nama)}</option>`).join('');
+  tkSelect.value = currentTk || '';
+}
