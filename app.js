@@ -388,6 +388,22 @@ async function deleteKategoriHandler(id) {
   }
 }
 
+// === VALIDATION HELPERS ===
+function validateField(value, errorElId, message) {
+  const errorEl = document.getElementById(errorElId);
+  if (!value || (typeof value === 'string' && !value.trim())) {
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+    return false;
+  }
+  errorEl.classList.add('hidden');
+  return true;
+}
+
+function clearErrors() {
+  document.querySelectorAll('[id$="-error"]').forEach(el => el.classList.add('hidden'));
+}
+
 // === ENTRY LIST VIEW ===
 async function loadEntries() {
   try {
@@ -519,6 +535,22 @@ async function saveEntry(e) {
     const tokoId = document.getElementById('field-toko').value || null;
     const tanggal = document.getElementById('field-tanggal').value;
     const catatan = document.getElementById('field-catatan').value.trim();
+
+    clearErrors();
+    let isValid = true;
+
+    if (!validateField(nama, 'entry-error-nama', 'Nama barang wajib diisi')) isValid = false;
+    if (!validateField(kategoriId, 'entry-error-kategori', 'Kategori wajib dipilih')) isValid = false;
+    if (!validateField(satuan, 'entry-error-satuan', 'Satuan wajib diisi')) isValid = false;
+    if (!validateField(harga > 0 ? harga.toString() : '', 'entry-error-harga', 'Harga wajib diisi dan harus lebih dari 0')) isValid = false;
+    if (!validateField(tokoId, 'entry-error-toko', 'Toko wajib dipilih')) isValid = false;
+    if (!validateField(tanggal, 'entry-error-tanggal', 'Tanggal wajib diisi')) isValid = false;
+
+    if (!isValid) {
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+      return;
+    }
 
     if (!barangId) {
       let existing = await getBarangByNama(nama);
@@ -741,6 +773,14 @@ async function saveToko(e) {
     const nama = document.getElementById('toko-field-nama').value.trim();
     const alamat = document.getElementById('toko-field-alamat').value.trim();
     const kontak = document.getElementById('toko-field-kontak').value.trim();
+
+    const errorEl = document.getElementById('toko-error-nama');
+    if (!nama) {
+      errorEl.textContent = 'Nama toko wajib diisi';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    errorEl.classList.add('hidden');
 
     if (id) {
       await updateToko(Number(id), { nama, alamat, kontak });
