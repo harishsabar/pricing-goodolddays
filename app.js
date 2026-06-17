@@ -626,11 +626,13 @@ async function openRiwayat(barangId) {
     const loading = document.getElementById('riwayat-loading');
     const nama = document.getElementById('riwayat-nama');
     const kategori = document.getElementById('riwayat-kategori');
+    const info = document.getElementById('riwayat-info');
 
-    const barang = await getBarangById(barangId);
-    if (!barang) return;
-    nama.textContent = barang.nama;
-    kategori.textContent = barang.kategori || '-';
+    const barang = await sb.from('barang').select('*, kategori:kategori_id(*)').eq('id', barangId).single();
+    if (!barang.data) return;
+    const b = barang.data;
+    nama.textContent = b.nama;
+    kategori.textContent = b.kategori ? b.kategori.nama : '-';
 
     modal.classList.add('open');
     list.innerHTML = '';
@@ -640,12 +642,25 @@ async function openRiwayat(barangId) {
     loading.classList.add('hidden');
 
     if (entries.length === 0) {
+      info.textContent = '';
       list.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Belum ada riwayat.</p>';
       return;
     }
 
-    list.innerHTML = entries.map(e => {
+    const total = entries.length;
+    const avg = Math.round(entries.reduce((sum, e) => sum + e.harga, 0) / total);
+    info.textContent = `${total} entry · Rata-rata Rp${rupiah(avg)}`;
+
+    list.innerHTML = entries.map((e, i) => {
       const toko = e.toko || {};
+      const prev = entries[i + 1]; // next in array = previous chronologically
+      let selisihHtml = '';
+      if (prev && prev.harga !== e.harga) {
+        const diff = e.harga - prev.harga;
+        const pct = prev.harga > 0 ? ((diff / prev.harga) * 100).toFixed(1) : 0;
+        const cls = diff > 0 ? 'text-green-600' : 'text-red-600';
+        selisihHtml = `<span class="${cls} text-xs ml-1">${diff > 0 ? '▲' : '▼'} Rp${rupiah(Math.abs(diff))} (${pct}%)</span>`;
+      }
       return `
         <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
           <div class="text-sm">
@@ -653,9 +668,10 @@ async function openRiwayat(barangId) {
             <span class="ml-2 text-gray-700">${escHtml(e.satuan)}</span>
             <span class="ml-1 text-gray-400">${escHtml(toko.nama || '-')}</span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
             <span class="font-semibold text-blue-700">Rp${rupiah(e.harga)}</span>
-            <button onclick="editEntry(${e.id})" class="text-xs text-blue-500 hover:underline" title="Edit">✎</button>
+            ${selisihHtml}
+            <button onclick="editEntry(${e.id})" class="text-xs text-blue-500 hover:underline ml-2" title="Edit">✎</button>
           </div>
         </div>
       `;
