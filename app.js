@@ -43,6 +43,7 @@ function navigate(view) {
 
   if (view === 'entry-list') { loadEntries(); loadFilterOptions(); }
   if (view === 'toko-list') { loadTokoList(); }
+  if (view === 'kategori-list') { loadKategoriList(); }
   if (view === 'add-entry') { resetForm(); loadFormOptions(); }
 }
 
@@ -275,6 +276,115 @@ async function getRiwayat(barangId) {
   } catch (err) {
     console.error('getRiwayat error:', err);
     return [];
+  }
+}
+
+// === KATEGORI VIEW ===
+async function loadKategoriList() {
+  try {
+    const container = document.getElementById('kategori-list');
+    const loading = document.getElementById('kategori-loading');
+    loading.classList.remove('hidden');
+    container.innerHTML = '';
+
+    const kats = await getKategoriAll();
+    loading.classList.add('hidden');
+
+    if (kats.length === 0) {
+      container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Belum ada kategori.</p>';
+      return;
+    }
+
+    container.innerHTML = kats.map(k => `
+      <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+        <div class="flex items-start justify-between">
+          <div class="font-medium text-gray-900">${escHtml(k.nama)}</div>
+          <div class="flex gap-1">
+            <button onclick="editKategoriModal(${k.id})" class="text-blue-600 text-xs px-2 py-1 rounded hover:bg-blue-50">Edit</button>
+            <button onclick="deleteKategoriHandler(${k.id})" class="text-red-500 text-xs px-2 py-1 rounded hover:bg-red-50">Hapus</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    alert('Gagal memuat kategori: ' + err.message);
+  }
+}
+
+function openKategoriModal() {
+  document.getElementById('kategori-form').reset();
+  document.getElementById('kategori-field-id').value = '';
+  document.getElementById('kategori-modal-title').textContent = 'Tambah Kategori';
+  document.getElementById('kategori-error-nama').classList.add('hidden');
+  document.getElementById('kategori-modal').classList.remove('hidden');
+  document.getElementById('kategori-modal').classList.add('flex');
+}
+
+function closeKategoriModal() {
+  document.getElementById('kategori-modal').classList.remove('flex');
+  document.getElementById('kategori-modal').classList.add('hidden');
+}
+
+async function saveKategori(e) {
+  e.preventDefault();
+  try {
+    const id = document.getElementById('kategori-field-id').value;
+    const nama = document.getElementById('kategori-field-nama').value.trim();
+    const errorEl = document.getElementById('kategori-error-nama');
+
+    if (!nama) {
+      errorEl.textContent = 'Nama kategori wajib diisi';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    errorEl.classList.add('hidden');
+
+    if (id) {
+      await updateKategori(Number(id), nama);
+    } else {
+      const existing = await sb.from('kategori').select('id').eq('nama', nama).maybeSingle();
+      if (existing && existing.data) {
+        errorEl.textContent = 'Nama kategori sudah ada';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      await createKategori(nama);
+    }
+
+    closeKategoriModal();
+    loadKategoriList();
+  } catch (err) {
+    alert('Gagal menyimpan kategori: ' + err.message);
+  }
+}
+
+async function editKategoriModal(id) {
+  try {
+    const kategori = await getKategoriById(id);
+    if (!kategori) return;
+    document.getElementById('kategori-field-id').value = kategori.id;
+    document.getElementById('kategori-field-nama').value = kategori.nama;
+    document.getElementById('kategori-error-nama').classList.add('hidden');
+    document.getElementById('kategori-modal-title').textContent = 'Edit Kategori';
+    document.getElementById('kategori-modal').classList.add('flex');
+  } catch (err) {
+    alert('Gagal memuat kategori: ' + err.message);
+  }
+}
+
+async function deleteKategoriHandler(id) {
+  try {
+    if (!confirm('Hapus kategori ini?')) return;
+    const { data: refs } = await sb.from('barang').select('id').eq('kategori_id', id).limit(1);
+    if (refs && refs.length > 0) {
+      alert('Tidak bisa hapus: masih ada barang yang menggunakan kategori ini.');
+      return;
+    }
+    await deleteKategori(id);
+    loadKategoriList();
+  } catch (err) {
+    alert('Gagal menghapus kategori: ' + err.message);
   }
 }
 
