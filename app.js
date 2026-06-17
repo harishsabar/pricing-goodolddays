@@ -377,3 +377,87 @@ async function openRiwayat(barangId) {
 function closeRiwayat() {
   document.getElementById('riwayat-modal').classList.remove('open');
 }
+
+// === TOKO VIEW ===
+async function loadTokoList() {
+  const container = document.getElementById('toko-list');
+  const loading = document.getElementById('toko-loading');
+  loading.classList.remove('hidden');
+  container.innerHTML = '';
+
+  const tokos = await getTokoAll();
+  loading.classList.add('hidden');
+
+  if (tokos.length === 0) {
+    container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Belum ada toko.</p>';
+    return;
+  }
+
+  container.innerHTML = tokos.map(t => `
+    <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-medium text-gray-900">${escHtml(t.nama)}</div>
+          ${t.alamat ? `<div class="text-xs text-gray-500 mt-0.5">${escHtml(t.alamat)}</div>` : ''}
+          ${t.kontak ? `<div class="text-xs text-gray-500">${escHtml(t.kontak)}</div>` : ''}
+        </div>
+        <div class="flex gap-1">
+          <button onclick="editTokoModal(${t.id})" class="text-blue-600 text-xs px-2 py-1 rounded hover:bg-blue-50">Edit</button>
+          <button onclick="deleteTokoHandler(${t.id})" class="text-red-500 text-xs px-2 py-1 rounded hover:bg-red-50">Hapus</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openTokoModal() {
+  editingTokoId = null;
+  document.getElementById('toko-form').reset();
+  document.getElementById('toko-field-id').value = '';
+  document.getElementById('toko-modal-title').textContent = 'Tambah Toko';
+  document.getElementById('toko-modal').classList.add('flex');
+}
+
+function closeTokoModal() {
+  document.getElementById('toko-modal').classList.remove('flex');
+}
+
+async function saveToko(e) {
+  e.preventDefault();
+  const id = document.getElementById('toko-field-id').value;
+  const nama = document.getElementById('toko-field-nama').value.trim();
+  const alamat = document.getElementById('toko-field-alamat').value.trim();
+  const kontak = document.getElementById('toko-field-kontak').value.trim();
+
+  if (id) {
+    await updateToko(parseInt(id), { nama, alamat, kontak });
+  } else {
+    await createToko(nama, alamat, kontak);
+  }
+
+  closeTokoModal();
+  loadTokoList();
+}
+
+async function editTokoModal(id) {
+  editingTokoId = id;
+  const { data: toko } = await sb.from('toko').select('*').eq('id', id).single();
+  if (!toko) return;
+  document.getElementById('toko-field-id').value = toko.id;
+  document.getElementById('toko-field-nama').value = toko.nama;
+  document.getElementById('toko-field-alamat').value = toko.alamat || '';
+  document.getElementById('toko-field-kontak').value = toko.kontak || '';
+  document.getElementById('toko-modal-title').textContent = 'Edit Toko';
+  document.getElementById('toko-modal').classList.add('flex');
+}
+
+async function deleteTokoHandler(id) {
+  if (!confirm('Hapus toko ini?')) return;
+  const { data: refs } = await sb.from('entry_harga').select('id').eq('toko_id', id).limit(1);
+  if (refs && refs.length > 0) {
+    alert('Tidak bisa hapus: masih ada entry harga yang menggunakan toko ini.');
+    return;
+  }
+  await deleteToko(id);
+  loadTokoList();
+}
