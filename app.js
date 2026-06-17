@@ -101,17 +101,6 @@ async function createBarang(nama, kategori) {
   }
 }
 
-async function getKategoriAll() {
-  try {
-    const { data } = await sb.from('barang').select('kategori').not('kategori', 'eq', '');
-    const set = new Set((data || []).map(r => r.kategori));
-    return [...set].sort();
-  } catch (err) {
-    console.error('getKategoriAll error:', err);
-    return [];
-  }
-}
-
 async function getBarangByNama(nama) {
   try {
     const { data } = await sb.from('barang').select('*').eq('nama', nama).maybeSingle();
