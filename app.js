@@ -331,3 +331,49 @@ async function deleteEntry() {
   await deleteEntryData(parseInt(id));
   navigate('entry-list');
 }
+
+// === RIWAYAT MODAL ===
+async function openRiwayat(barangId) {
+  const modal = document.getElementById('riwayat-modal');
+  const list = document.getElementById('riwayat-list');
+  const loading = document.getElementById('riwayat-loading');
+  const nama = document.getElementById('riwayat-nama');
+  const kategori = document.getElementById('riwayat-kategori');
+
+  const barang = await getBarangById(barangId);
+  nama.textContent = barang.nama;
+  kategori.textContent = barang.kategori || '-';
+
+  modal.classList.add('open');
+  list.innerHTML = '';
+  loading.classList.remove('hidden');
+
+  const entries = await getRiwayat(barangId);
+  loading.classList.add('hidden');
+
+  if (entries.length === 0) {
+    list.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Belum ada riwayat.</p>';
+    return;
+  }
+
+  list.innerHTML = entries.map(e => {
+    const toko = e.toko || {};
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+        <div class="text-sm">
+          <span class="text-gray-500">${e.tanggal}</span>
+          <span class="ml-2 text-gray-700">${escHtml(e.satuan)}</span>
+          <span class="ml-1 text-gray-400">${escHtml(toko.nama || '-')}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-blue-700">Rp${rupiah(e.harga)}</span>
+          <button onclick="editEntry(${e.id})" class="text-xs text-blue-500 hover:underline" title="Edit">✎</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function closeRiwayat() {
+  document.getElementById('riwayat-modal').classList.remove('open');
+}
